@@ -19,8 +19,9 @@
  */
 package liquibase;
 
-import java.sql.Connection;
+import java.util.Properties;
 
+import com.clickhouse.jdbc.ClickHouseDataSource;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
@@ -112,9 +113,14 @@ public class ClickHouseTest {
     ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor();
 
     try {
-      Connection connection = clickHouseContainer.createConnection("");
-      JdbcConnection jdbcConnection = new JdbcConnection(connection);
+      String jdbcUrl = clickHouseContainer.getJdbcUrl();
+      Properties properties = new Properties();
+      properties.setProperty("username", clickHouseContainer.getUsername());
+      properties.setProperty("password", clickHouseContainer.getPassword());
+      ClickHouseDataSource clickHouseDataSource = new ClickHouseDataSource(jdbcUrl, properties);
+      JdbcConnection jdbcConnection = new JdbcConnection(clickHouseDataSource.getConnection());
       Database database = dbFactory.findCorrectDatabaseImplementation(jdbcConnection);
+      database.setDefaultSchemaName(clickHouseDataSource.getConnection().getCurrentDatabase());
       Liquibase liquibase = new Liquibase(changelog, resourceAccessor, database);
       liquibaseAction.accept(liquibase, database);
     } catch (Exception e) {

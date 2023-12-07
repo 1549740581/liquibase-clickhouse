@@ -67,7 +67,7 @@
         <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <clickhouse-jdbc.version>0.3.2</clickhouse-jdbc.version>
+        <clickhouse-jdbc.version>0.4.6</clickhouse-jdbc.version>
         <liquibase.version>4.15.0</liquibase.version>
         <junit.version>5.4.0</junit.version>
         <test-containers.version>1.17.3</test-containers.version>
@@ -83,6 +83,7 @@
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <snakeyaml.version>1.28</snakeyaml.version>
         <typesafe-config.version>1.4.1</typesafe-config.version>
+        <lz4-verson>1.8.0</lz4-verson>
     </properties>
 
     <dependencies>
@@ -125,6 +126,12 @@
             <artifactId>config</artifactId>
             <version>${typesafe-config.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
+            <version>${lz4-verson}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -155,20 +162,20 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>${maven-gpg-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-gpg-plugin</artifactId>-->
+<!--                <version>${maven-gpg-plugin.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>sign-artifacts</id>-->
+<!--                        <phase>verify</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>sign</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
@@ -213,41 +220,41 @@
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>shaded</shadedClassifierName>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.</pattern>
-                                    <shadedPattern>shaded.liquibase.com.</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>net.</pattern>
-                                    <shadedPattern>shaded.liquibase.net.</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.</pattern>
-                                    <shadedPattern>shaded.liquibase.org.</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>ru.</pattern>
-                                    <shadedPattern>shaded.liquibase.ru.</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-shade-plugin</artifactId>-->
+<!--                <version>${maven-shade-plugin.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>shade</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <shadedArtifactAttached>true</shadedArtifactAttached>-->
+<!--                            <shadedClassifierName>shaded</shadedClassifierName>-->
+<!--                            <relocations>-->
+<!--                                <relocation>-->
+<!--                                    <pattern>com.</pattern>-->
+<!--                                    <shadedPattern>shaded.liquibase.com.</shadedPattern>-->
+<!--                                </relocation>-->
+<!--                                <relocation>-->
+<!--                                    <pattern>net.</pattern>-->
+<!--                                    <shadedPattern>shaded.liquibase.net.</shadedPattern>-->
+<!--                                </relocation>-->
+<!--                                <relocation>-->
+<!--                                    <pattern>org.</pattern>-->
+<!--                                    <shadedPattern>shaded.liquibase.org.</shadedPattern>-->
+<!--                                </relocation>-->
+<!--                                <relocation>-->
+<!--                                    <pattern>ru.</pattern>-->
+<!--                                    <shadedPattern>shaded.liquibase.ru.</shadedPattern>-->
+<!--                                </relocation>-->
+<!--                            </relocations>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>com.coveo</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
