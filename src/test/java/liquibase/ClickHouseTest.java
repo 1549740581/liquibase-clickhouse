@@ -2,7 +2,7 @@
  * #%L
  * Liquibase extension for Clickhouse
  * %%
- * Copyright (C) 2020 - 2023 Mediarithmics
+ * Copyright (C) 2020 - 2025 Mediarithmics
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,15 @@ package liquibase;
 import java.util.Properties;
 
 import com.clickhouse.jdbc.ClickHouseDataSource;
+import com.clickhouse.jdbc.DataSourceImpl;
+
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.ClickHouseContainer;
+import org.testcontainers.clickhouse.ClickHouseContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.apache.commons.io.output.NullWriter;
@@ -37,8 +39,8 @@ import org.testcontainers.shaded.org.apache.commons.io.output.NullWriter;
 public class ClickHouseTest {
 
   @Container
-  private static ClickHouseContainer clickHouseContainer =
-      new ClickHouseContainer("clickhouse/clickhouse-server:22.3.8.39");
+  private static final ClickHouseContainer clickHouseContainer =
+      new ClickHouseContainer("clickhouse/clickhouse-server:23.8.8.20").withDatabaseName("default");
 
   @Test
   void canInitializeLiquibaseSchema() {
@@ -117,11 +119,17 @@ public class ClickHouseTest {
       Properties properties = new Properties();
       properties.setProperty("username", clickHouseContainer.getUsername());
       properties.setProperty("password", clickHouseContainer.getPassword());
-      ClickHouseDataSource clickHouseDataSource = new ClickHouseDataSource(jdbcUrl, properties);
-      JdbcConnection jdbcConnection = new JdbcConnection(clickHouseDataSource.getConnection());
+      DataSourceImpl clickHouseDataSource = new DataSourceImpl(jdbcUrl, properties);
+      java.sql.Connection connection = clickHouseDataSource.getConnection();
+      JdbcConnection jdbcConnection = new JdbcConnection(connection);
       Database database = dbFactory.findCorrectDatabaseImplementation(jdbcConnection);
-      database.setDefaultSchemaName(clickHouseDataSource.getConnection().getCurrentDatabase());
-      Liquibase liquibase = new Liquibase(changelog, resourceAccessor, database);
+
+      // 使用 ClickHouse 的默认数据库名称
+      database.setDefaultSchemaName("default");
+
+      // 设置较短的锁等待时间，避免测试卡住
+      Liquibase liquibase = new Liquibase(changelog, resourceAccessor, database);// 10秒超时
+
       liquibaseAction.accept(liquibase, database);
     } catch (Exception e) {
       throw new RuntimeException(e);
