@@ -2,7 +2,7 @@
  * #%L
  * Liquibase extension for Clickhouse
  * %%
- * Copyright (C) 2020 - 2023 Mediarithmics
+ * Copyright (C) 2020 - 2025 Mediarithmics
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class CreateDatabaseChangeLogLockTableClickHouse
                 + "("
                 + "ID Int64,"
                 + "LOCKED UInt8,"
-                + "LOCKGRANTED Nullable(DateTime64),"
+                + "LOCKTIME Nullable(DateTime64),"
                 + "LOCKEDBY Nullable(String)) "
                 + SqlGeneratorUtil.generateSqlEngineClause(
                     properties, tableName.toLowerCase(Locale.ROOT)),

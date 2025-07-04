@@ -2,7 +2,7 @@
  * #%L
  * Liquibase extension for Clickhouse
  * %%
- * Copyright (C) 2020 - 2023 Mediarithmics
+ * Copyright (C) 2020 - 2025 Mediarithmics
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class LockDatabaseChangeLogClickHouse extends LockDatabaseChangeLogGenera
         String.format(
             "ALTER TABLE `%s`.%s "
                 + SqlGeneratorUtil.generateSqlOnClusterClause(properties)
-                + "UPDATE LOCKED = 1,LOCKEDBY = '%s',LOCKGRANTED = %s WHERE ID = 1 AND LOCKED = 0 SETTINGS mutations_sync = 1",
+                + "UPDATE LOCKED = 1,LOCKEDBY = '%s',LOCKTIME = %s WHERE ID = 1 AND LOCKED = 0 SETTINGS mutations_sync = 1",
             database.getDefaultSchemaName(),
             database.getDatabaseChangeLogLockTableName(),
             host,

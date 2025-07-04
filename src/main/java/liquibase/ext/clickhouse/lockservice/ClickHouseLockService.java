@@ -2,7 +2,7 @@
  * #%L
  * Liquibase extension for Clickhouse
  * %%
- * Copyright (C) 2020 - 2023 Mediarithmics
+ * Copyright (C) 2020 - 2025 Mediarithmics
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,29 @@
  */
 package liquibase.ext.clickhouse.lockservice;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import liquibase.ext.clickhouse.database.ClickHouseDatabase;
 
 import liquibase.Scope;
 import liquibase.database.Database;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
+import liquibase.exception.LockException;
 import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
+import liquibase.lockservice.DatabaseChangeLogLock;
 import liquibase.lockservice.StandardLockService;
 import liquibase.logging.Logger;
+import liquibase.statement.SqlStatement;
 import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.SelectFromDatabaseChangeLogLockStatement;
 
 public class ClickHouseLockService extends StandardLockService {
 
@@ -44,6 +55,51 @@ public class ClickHouseLockService extends StandardLockService {
   @Override
   public boolean supports(Database database) {
     return database instanceof ClickHouseDatabase;
+  }
+
+  @Override
+  public DatabaseChangeLogLock[] listLocks() throws LockException {
+    try {
+      if (!this.hasDatabaseChangeLogLockTable()) {
+        return new DatabaseChangeLogLock[0];
+      }
+
+      List<DatabaseChangeLogLock> allLocks = new ArrayList<>();
+      SqlStatement sqlStatement =
+          new SelectFromDatabaseChangeLogLockStatement("ID", "LOCKED", "LOCKTIME", "LOCKEDBY");
+      List<Map<String, ?>> rows =
+          Scope.getCurrentScope()
+              .getSingleton(ExecutorService.class)
+              .getExecutor("jdbc", database)
+              .queryForList(sqlStatement);
+      for (Map columnMap : rows) {
+        Object lockedValue = columnMap.get("LOCKED");
+        Boolean locked;
+        if (lockedValue instanceof Number) {
+          locked = ((Number) lockedValue).intValue() == 1;
+        } else {
+          locked = (Boolean) lockedValue;
+        }
+        if ((locked != null) && locked) {
+          Object LOCKTIME = columnMap.get("LOCKTIME");
+          final Date castedLOCKTIME;
+          if (LOCKTIME instanceof LocalDateTime) {
+            castedLOCKTIME =
+                Date.from(((LocalDateTime) LOCKTIME).atZone(ZoneId.systemDefault()).toInstant());
+          } else {
+            castedLOCKTIME = (Date) LOCKTIME;
+          }
+          allLocks.add(
+              new DatabaseChangeLogLock(
+                  ((Number) columnMap.get("ID")).intValue(),
+                  castedLOCKTIME,
+                  (String) columnMap.get("LOCKEDBY")));
+        }
+      }
+      return allLocks.toArray(new DatabaseChangeLogLock[allLocks.size()]);
+    } catch (Exception e) {
+      throw new LockException(e);
+    }
   }
 
   @Override
