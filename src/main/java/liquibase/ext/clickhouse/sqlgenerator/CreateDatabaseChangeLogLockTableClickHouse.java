@@ -19,7 +19,10 @@
  */
 package liquibase.ext.clickhouse.sqlgenerator;
 
-import java.util.*;
+import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_DEFAULT_FIELD_NAME;
+import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_FIELD_NAME_PROPERTY_NAME;
+
+import java.util.Locale;
 
 import liquibase.ext.clickhouse.database.ClickHouseDatabase;
 import liquibase.ext.clickhouse.params.ClusterConfig;
@@ -51,7 +54,8 @@ public class CreateDatabaseChangeLogLockTableClickHouse
       SqlGeneratorChain sqlGeneratorChain) {
     ClusterConfig properties = ParamsLoader.getLiquibaseClickhouseProperties();
     String tableName = database.getDatabaseChangeLogLockTableName();
-
+    String lockTimeFieldName =
+        System.getProperty(LOCK_TIME_FIELD_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_FIELD_NAME);
     String createTableQuery =
         String.format(
             "CREATE TABLE IF NOT EXISTS `%s`.%s "
@@ -59,7 +63,8 @@ public class CreateDatabaseChangeLogLockTableClickHouse
                 + "("
                 + "ID Int64,"
                 + "LOCKED UInt8,"
-                + "LOCKTIME Nullable(DateTime64),"
+                + lockTimeFieldName
+                + " Nullable(DateTime64),"
                 + "LOCKEDBY Nullable(String)) "
                 + SqlGeneratorUtil.generateSqlEngineClause(
                     properties, tableName.toLowerCase(Locale.ROOT)),

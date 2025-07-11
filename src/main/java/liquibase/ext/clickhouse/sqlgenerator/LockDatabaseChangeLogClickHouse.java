@@ -19,6 +19,9 @@
  */
 package liquibase.ext.clickhouse.sqlgenerator;
 
+import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_DEFAULT_FIELD_NAME;
+import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_FIELD_NAME_PROPERTY_NAME;
+
 import liquibase.ext.clickhouse.database.ClickHouseDatabase;
 import liquibase.ext.clickhouse.params.ClusterConfig;
 import liquibase.ext.clickhouse.params.ParamsLoader;
@@ -49,11 +52,15 @@ public class LockDatabaseChangeLogClickHouse extends LockDatabaseChangeLogGenera
     ClusterConfig properties = ParamsLoader.getLiquibaseClickhouseProperties();
 
     String host = String.format("%s %s (%s)", hostname, hostDescription, hostaddress);
+    String lockTimeFieldName =
+        System.getProperty(LOCK_TIME_FIELD_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_FIELD_NAME);
     String lockQuery =
         String.format(
             "ALTER TABLE `%s`.%s "
                 + SqlGeneratorUtil.generateSqlOnClusterClause(properties)
-                + "UPDATE LOCKED = 1,LOCKEDBY = '%s',LOCKTIME = %s WHERE ID = 1 AND LOCKED = 0 SETTINGS mutations_sync = 1",
+                + "UPDATE LOCKED = 1,LOCKEDBY = '%s',"
+                + lockTimeFieldName
+                + " = %s WHERE ID = 1 AND LOCKED = 0 SETTINGS mutations_sync = 1",
             database.getDefaultSchemaName(),
             database.getDatabaseChangeLogLockTableName(),
             host,
