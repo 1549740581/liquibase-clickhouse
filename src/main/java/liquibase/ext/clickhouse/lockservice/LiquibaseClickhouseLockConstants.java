@@ -19,9 +19,9 @@
  */
 package liquibase.ext.clickhouse.lockservice;
 
-public interface LockConstants {
+public interface LiquibaseClickhouseLockConstants {
 
-  String LOCK_TIME_FIELD_NAME_PROPERTY_NAME = "liquibase.clickhouse.locktimefieldname";
+  String LOCK_TIME_COLUMN_NAME_PROPERTY_NAME = "liquibase.clickhouse.locktimecolumn";
 
-  String LOCK_TIME_DEFAULT_FIELD_NAME = "LOCKGRANTED";
+  String LOCK_TIME_DEFAULT_COLUMN_NAME = "LOCKGRANTED";
 }

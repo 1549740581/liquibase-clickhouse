@@ -19,8 +19,8 @@
  */
 package liquibase.ext.clickhouse.lockservice;
 
-import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_DEFAULT_FIELD_NAME;
-import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_FIELD_NAME_PROPERTY_NAME;
+import static liquibase.ext.clickhouse.lockservice.LiquibaseClickhouseLockConstants.LOCK_TIME_COLUMN_NAME_PROPERTY_NAME;
+import static liquibase.ext.clickhouse.lockservice.LiquibaseClickhouseLockConstants.LOCK_TIME_DEFAULT_COLUMN_NAME;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -67,7 +67,7 @@ public class ClickHouseLockService extends StandardLockService {
         return new DatabaseChangeLogLock[0];
       }
       String lockTimeFieldName =
-          System.getProperty(LOCK_TIME_FIELD_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_FIELD_NAME);
+          System.getProperty(LOCK_TIME_COLUMN_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_COLUMN_NAME);
 
       List<DatabaseChangeLogLock> allLocks = new ArrayList<>();
       SqlStatement sqlStatement =

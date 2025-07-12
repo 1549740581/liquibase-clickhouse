@@ -19,8 +19,8 @@
  */
 package liquibase.ext.clickhouse.sqlgenerator;
 
-import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_DEFAULT_FIELD_NAME;
-import static liquibase.ext.clickhouse.lockservice.LockConstants.LOCK_TIME_FIELD_NAME_PROPERTY_NAME;
+import static liquibase.ext.clickhouse.lockservice.LiquibaseClickhouseLockConstants.LOCK_TIME_COLUMN_NAME_PROPERTY_NAME;
+import static liquibase.ext.clickhouse.lockservice.LiquibaseClickhouseLockConstants.LOCK_TIME_DEFAULT_COLUMN_NAME;
 
 import java.util.Locale;
 
@@ -55,7 +55,7 @@ public class CreateDatabaseChangeLogLockTableClickHouse
     ClusterConfig properties = ParamsLoader.getLiquibaseClickhouseProperties();
     String tableName = database.getDatabaseChangeLogLockTableName();
     String lockTimeFieldName =
-        System.getProperty(LOCK_TIME_FIELD_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_FIELD_NAME);
+        System.getProperty(LOCK_TIME_COLUMN_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_COLUMN_NAME);
     String createTableQuery =
         String.format(
             "CREATE TABLE IF NOT EXISTS `%s`.%s "
