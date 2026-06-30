@@ -63,7 +63,7 @@ public class ClickHouseLockService extends StandardLockService {
   @Override
   public DatabaseChangeLogLock[] listLocks() throws LockException {
     try {
-      if (!this.hasDatabaseChangeLogLockTable()) {
+      if (!this.isDatabaseChangeLogLockTableCreated()) {
         return new DatabaseChangeLogLock[0];
       }
       String lockTimeFieldName =
@@ -130,7 +130,7 @@ public class ClickHouseLockService extends StandardLockService {
   }
 
   @Override
-  public boolean hasDatabaseChangeLogLockTable() {
+  protected boolean isDatabaseChangeLogLockTableCreated() {
     boolean hasTable = false;
     try {
       String query =

@@ -3,9 +3,9 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.mediarithmics</groupId>
+    <groupId>com.darcytech</groupId>
     <artifactId>liquibase-clickhouse</artifactId>
-    <version>0.7.3-SNAPSHOT</version>
+    <version>dx-20260630.2</version>
     <packaging>jar</packaging>
     <inceptionYear>2020</inceptionYear>
 
@@ -68,7 +68,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <clickhouse-jdbc.version>0.4.6</clickhouse-jdbc.version>
-        <liquibase.version>4.15.0</liquibase.version>
+        <liquibase.version>4.31.1</liquibase.version>
         <junit.version>5.4.0</junit.version>
         <test-containers.version>1.17.3</test-containers.version>
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
