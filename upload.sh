@@ -3,7 +3,7 @@ set -euo pipefail
 
 GROUP_ID="${GROUP_ID:-com.darcytech}"
 ARTIFACT_ID="${ARTIFACT_ID:-liquibase-clickhouse}"
-VERSION="${VERSION:-dx-20260630.2}"
+VERSION="${VERSION:-dx-20261103.1}"
 REPOSITORY_ID="${REPOSITORY_ID:-nexus-darcy}"
 REPOSITORY_URL="${REPOSITORY_URL:-http://nexus.darcytech.com/repository/thirdparty}"
 
@@ -22,6 +22,7 @@ mvn deploy:deploy-file -e \
   -DgroupId="${GROUP_ID}" \
   -DartifactId="${ARTIFACT_ID}" \
   -Dpackaging=jar \
+  -DpomFile=pom.xml \
   -Dfile="target/${ARTIFACT_ID}-${VERSION}.jar" \
   -Dsources="target/${ARTIFACT_ID}-${VERSION}-sources.jar" \
   -DrepositoryId="${REPOSITORY_ID}" \

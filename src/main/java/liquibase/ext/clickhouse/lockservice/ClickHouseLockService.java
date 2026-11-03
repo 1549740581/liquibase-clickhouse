@@ -28,10 +28,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import liquibase.ext.clickhouse.database.ClickHouseDatabase;
+import liquibase.ext.clickhouse.params.ClusterConfig;
+import liquibase.ext.clickhouse.params.ParamsLoader;
 
 import liquibase.Scope;
+import liquibase.changelog.ChangeLogHistoryServiceFactory;
 import liquibase.database.Database;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
@@ -43,12 +47,155 @@ import liquibase.lockservice.DatabaseChangeLogLock;
 import liquibase.lockservice.StandardLockService;
 import liquibase.logging.Logger;
 import liquibase.statement.SqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.statement.core.RawSqlStatement;
 import liquibase.statement.core.SelectFromDatabaseChangeLogLockStatement;
+import liquibase.util.NetUtil;
 
 public class ClickHouseLockService extends StandardLockService {
 
   private boolean isLockTableInitialized;
+  private String lockOwner;
+
+  @Override
+  public boolean acquireLock() throws LockException {
+    if (hasChangeLogLock) {
+      return true;
+    }
+    try {
+      init();
+      if (readLockState().locked) {
+        return false;
+      }
+      if (lockOwner == null) {
+        lockOwner =
+            NetUtil.getLocalHostName()
+                + " ("
+                + NetUtil.getLocalHostAddress()
+                + ") "
+                + UUID.randomUUID();
+      }
+      // ClickHouse mutations do not report a reliable affected-row count.
+      executeMutation(
+          "LOCKED = 1, LOCKEDBY = ?, " + lockTimeColumn() + " = now()",
+          "ID = 1 AND LOCKED = 0",
+          lockOwner);
+      LockState state = readLockState();
+      hasChangeLogLock = state.locked && lockOwner.equals(state.owner);
+      if (hasChangeLogLock) {
+        database.commit();
+        Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class).resetAll();
+        database.setCanCacheLiquibaseTableInfo(true);
+        getLogger().info("Successfully acquired change log lock");
+      }
+      return hasChangeLogLock;
+    } catch (Exception e) {
+      throw new LockException(e);
+    }
+  }
+
+  @Override
+  public void releaseLock() throws LockException {
+    if (hasChangeLogLock) {
+      unlock(false);
+    }
+  }
+
+  @Override
+  public void forceReleaseLock() throws LockException, DatabaseException {
+    init();
+    unlock(true);
+  }
+
+  private void unlock(boolean force) throws LockException {
+    try {
+      String assignments = "LOCKED = 0, LOCKEDBY = NULL, " + lockTimeColumn() + " = NULL";
+      if (force) {
+        executeMutation(assignments, "ID = 1 AND LOCKED = 1");
+      } else {
+        executeMutation(assignments, "ID = 1 AND LOCKED = 1 AND LOCKEDBY = ?", lockOwner);
+      }
+      if (readLockState().locked) {
+        throw new LockException(
+            "Change log lock remains held; ordinary unlock only releases this instance's lock");
+      }
+      database.commit();
+      getLogger().info("Successfully released change log lock");
+    } catch (Exception e) {
+      throw new LockException(e);
+    } finally {
+      hasChangeLogLock = false;
+      database.setCanCacheLiquibaseTableInfo(false);
+    }
+  }
+
+  private void executeMutation(String assignments, String condition, Object... parameters)
+      throws DatabaseException {
+    ClusterConfig cluster = ParamsLoader.getLiquibaseClickhouseProperties();
+    String onCluster = cluster == null ? "" : "ON CLUSTER '" + cluster.getClusterName() + "' ";
+    String sql =
+        "ALTER TABLE "
+            + lockTable()
+            + " "
+            + onCluster
+            + "UPDATE "
+            + assignments
+            + " WHERE "
+            + condition
+            + " SETTINGS mutations_sync = 1";
+    getExecutor().execute(new RawParameterizedSqlStatement(sql, parameters));
+  }
+
+  private LockState readLockState() throws DatabaseException {
+    List<Map<String, ?>> rows =
+        getExecutor()
+            .queryForList(
+                new RawSqlStatement(
+                    "SELECT LOCKED, LOCKEDBY FROM " + lockTable() + " WHERE ID = 1"));
+    if (rows.size() != 1) {
+      throw new DatabaseException("Expected exactly one change log lock row, found " + rows.size());
+    }
+    Object locked = rows.get(0).get("LOCKED");
+    if (!(locked instanceof Boolean) && !(locked instanceof Number)) {
+      throw new DatabaseException("Invalid LOCKED value: " + locked);
+    }
+    boolean isLocked =
+        locked instanceof Boolean ? (Boolean) locked : ((Number) locked).intValue() != 0;
+    return new LockState(isLocked, (String) rows.get(0).get("LOCKEDBY"));
+  }
+
+  private String lockTable() {
+    return database.escapeTableName(
+        database.getLiquibaseCatalogName(),
+        database.getLiquibaseSchemaName(),
+        database.getDatabaseChangeLogLockTableName());
+  }
+
+  private String lockTimeColumn() {
+    String name =
+        System.getProperty(LOCK_TIME_COLUMN_NAME_PROPERTY_NAME, LOCK_TIME_DEFAULT_COLUMN_NAME);
+    return database.escapeColumnName(
+        database.getLiquibaseCatalogName(),
+        database.getLiquibaseSchemaName(),
+        database.getDatabaseChangeLogLockTableName(),
+        name);
+  }
+
+  @Override
+  public void reset() {
+    super.reset();
+    isLockTableInitialized = false;
+  }
+
+  private static class LockState {
+    private final boolean locked;
+    private final String owner;
+
+    private LockState(boolean locked, String owner) {
+      this.locked = locked;
+      this.owner = owner;
+    }
+  }
 
   @Override
   public int getPriority() {

@@ -5,7 +5,7 @@
 
     <groupId>com.darcytech</groupId>
     <artifactId>liquibase-clickhouse</artifactId>
-    <version>dx-20260630.2</version>
+    <version>dx-20261103.1</version>
     <packaging>jar</packaging>
     <inceptionYear>2020</inceptionYear>
 
